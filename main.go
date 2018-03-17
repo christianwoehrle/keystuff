@@ -2,44 +2,49 @@ package main
 
 import (
 	"crypto/md5"
-	"fmt"
 	"crypto/rand"
 	"crypto/rsa"
+	"fmt"
 	"math/big"
 
+	"crypto/aes"
+	"os"
 )
 
 func main() {
 
-	hash :=md5.New()
-	hash.Write([]byte("du bist der Dude"))
+	hash := md5.New()
+	hash.Write([]byte("Text to be hashed"))
+	//fmt.Println(hash.Sum(nil))
 
-	fmt.Println(hash.Sum(nil))
+	aesKey := []byte("this is my key !")
+	aesCipher, err := aes.NewCipher(aesKey)
+	handleResult("Error creating aesCipher: ", err)
+	fmt.Printf("Cipher: %v\n\n", aesCipher)
 
 	reader := rand.Reader
-	bitsize :=512
-	key,err := rsa.GenerateKey(reader, bitsize)
-
-	fmt.Println("publickey: ", key.PublicKey, err)
-	fmt.Println("publickey exponent: " , key.PublicKey.E)
-	fmt.Println("publickey N: " , key.PublicKey.N)
-	fmt.Println("privatekey: ", key.D)
-	fmt.Println("key: ", key)
+	bitsize := 512
+	key, err := rsa.GenerateKey(reader, bitsize)
 
 	fmt.Println("prime0: ", key.Primes[0])
 	fmt.Println("prime1: ", key.Primes[1])
 	//p0 := *key.Primes[0]
 	//p1:= *key.Primes[1]
-	 p2 := *big.NewInt(0)
-	p3 :=  p2.Mul(key.Primes[0], key.Primes[1])
+	p2 := *big.NewInt(0)
+	p3 := p2.Mul(key.Primes[0], key.Primes[1])
 
-	fmt.Println("p1 * p2: ", p3)
+	fmt.Println("Expected Modulus: ", p3)
 
-	fmt.Println("exponent: " , key.D.String)
-	fmt.Println("publickey: " , key.E)
+	fmt.Println("Modulus         : ", key.N)
+	fmt.Println("publickey E:  ", key.E)
 
+	fmt.Println("privatekey D: ", key.D)
 
-	fmt.Println("privatekey: ", key.D)
+}
 
-
+func handleResult(text string, err error) {
+	if err != nil {
+		fmt.Printf("Error occurrend: %s, --> %v", text, err)
+		os.Exit(1)
+	}
 }
