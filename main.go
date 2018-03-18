@@ -68,12 +68,13 @@ func main() {
 	handleResult("Couldn´t create certificate", err)
 
 	fmt.Println(derBytes)
-	certbytes := make([]byte, 0, 5000)
+	var certbytes []byte
+	//certbytes := make([]byte, 0, 5000)
 	certbuffer := bytes.NewBuffer(certbytes)
 	err = pem.Encode(certbuffer, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 	handleResult("Certificat not Encoded", err)
 	fmt.Println("Cert\n ", certbuffer, "\n\n")
-	keybytes := make([]byte, 0, 5000)
+	var keybytes []byte
 	keybuffer := bytes.NewBuffer(keybytes)
 	err = pem.Encode(keybuffer, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
 	handleResult("Key not Encoded", err)
