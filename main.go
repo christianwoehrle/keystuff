@@ -7,8 +7,13 @@ import (
 	"fmt"
 	"math/big"
 
+	"bytes"
 	"crypto/aes"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"os"
+	"time"
 )
 
 func main() {
@@ -22,9 +27,9 @@ func main() {
 	handleResult("Error creating aesCipher: ", err)
 	fmt.Printf("Cipher: %v\n\n", aesCipher)
 
-	reader := rand.Reader
+	rreader := rand.Reader
 	bitsize := 512
-	key, err := rsa.GenerateKey(reader, bitsize)
+	key, err := rsa.GenerateKey(rreader, bitsize)
 
 	fmt.Println("prime0: ", key.Primes[0])
 	fmt.Println("prime1: ", key.Primes[1])
@@ -39,6 +44,40 @@ func main() {
 	fmt.Println("publickey E:  ", key.E)
 
 	fmt.Println("privatekey D: ", key.D)
+
+	now := time.Now()
+	until := now.Add(365 * 24 * time.Hour)
+
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1504),
+		Subject: pkix.Name{
+			CommonName:   "chrisi.de",
+			Country:      []string{"de"},
+			Organization: []string{"dude.co"}},
+		NotBefore:             now,
+		NotAfter:              until,
+		SubjectKeyId:          []byte{1, 2, 3, 4},
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDataEncipherment | x509.KeyUsageKeyEncipherment,
+		BasicConstraintsValid: true,
+		IsCA:     true,
+		DNSNames: []string{"chrissi.de", "localhost"},
+	}
+
+	fmt.Printf("%T|\n", key)
+	derBytes, err := x509.CreateCertificate(rreader, &template, &template, &key.PublicKey, key)
+	handleResult("Couldn´t create certificate", err)
+
+	fmt.Println(derBytes)
+	certbytes := make([]byte, 0, 5000)
+	certbuffer := bytes.NewBuffer(certbytes)
+	err = pem.Encode(certbuffer, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	handleResult("Certificat not Encoded", err)
+	fmt.Println("Cert\n ", certbuffer, "\n\n")
+	keybytes := make([]byte, 0, 5000)
+	keybuffer := bytes.NewBuffer(keybytes)
+	err = pem.Encode(keybuffer, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
+	handleResult("Key not Encoded", err)
+	fmt.Println("Key\n", keybuffer, "\n\n")
 
 }
 
